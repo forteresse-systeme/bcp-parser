@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bcp-frontend
+  namespace: bcp-parser
+  labels:
+    app: bcp-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bcp-frontend
+  template:
+    metadata:
+      labels:
+        app: bcp-frontend
+    spec:
+      containers:
+        - name: bcp-frontend
+          image: ghcr.io/REPLACE_OWNER/bcp-parser-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      imagePullSecrets:
+        - name: ghcr-pull

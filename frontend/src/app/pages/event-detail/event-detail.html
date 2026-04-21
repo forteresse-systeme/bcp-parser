@@ -1,0 +1,160 @@
+<p><a routerLink="/events">← Back to events</a></p>
+
+@if (loading()) { <p class="muted">Loading event…</p> }
+@if (error()) { <p class="error">{{ error() }}</p> }
+
+@if (event(); as e) {
+  <header class="detail-header">
+    @if (e.photoUrl) { <img [src]="e.photoUrl" [alt]="e.name" /> }
+    <div>
+      <h1>{{ e.name }}</h1>
+      <div class="subrow">
+        <span>{{ e.eventDate | date: 'EEEE, MMM d, y' }}</span>
+        @if (e.numberOfRounds) { <span>· {{ e.numberOfRounds }} rounds</span> }
+        @if (e.totalPlayers) { <span>· {{ e.totalPlayers }} players</span> }
+        @if (e.gameSystemName) { <span>· {{ e.gameSystemName }}</span> }
+      </div>
+      <div class="muted subrow">
+        {{ e.locationName || '' }}@if (e.locationName && e.formatted_address) { — }{{ e.formatted_address }}
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button [class.active]="tab() === 'overview'" (click)="setTab('overview')">Overview</button>
+    <button [class.active]="tab() === 'players'" (click)="setTab('players')">Players ({{ players().length }})</button>
+    <button [class.active]="tab() === 'placings'" (click)="setTab('placings')">Placings ({{ placings().length }})</button>
+    <button [class.active]="tab() === 'pairings'" (click)="setTab('pairings')">Pairings ({{ pairings().length }})</button>
+  </nav>
+
+  @switch (tab()) {
+    @case ('overview') {
+      <section class="overview">
+        <dl>
+          <dt>Organizer</dt><dd>{{ e.ownerFirstName }} {{ e.ownerLastName }}</dd>
+          <dt>Status</dt><dd>{{ e.ended ? 'Ended' : (e.started ? 'In progress' : 'Upcoming') }}</dd>
+          <dt>Current round</dt><dd>{{ e.currentRound ?? '—' }}</dd>
+          <dt>Checked in</dt><dd>{{ e.checkedInPlayers ?? '—' }}</dd>
+          <dt>Dropped</dt><dd>{{ e.droppedPlayers ?? '—' }}</dd>
+          <dt>Time zone</dt><dd>{{ e.timeZone || '—' }}</dd>
+          <dt>Online</dt><dd>{{ e.isOnlineEvent ? 'Yes' : 'No' }}</dd>
+          <dt>Tickets</dt><dd>{{ e.numTickets ?? '—' }}</dd>
+          <dt>Ticket price</dt><dd>{{ e.ticketPrice != null ? (e.ticketPrice / 100 | currency: 'USD') : '—' }}</dd>
+        </dl>
+        @if (e.description) { <p class="desc">{{ e.description }}</p> }
+      </section>
+    }
+    @case ('players') {
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Faction</th><th>Team</th><th>Checked in</th><th>Dropped</th></tr>
+        </thead>
+        <tbody>
+          @for (p of players(); track p.id) {
+            <tr>
+              <td>{{ playerName(p) }}</td>
+              <td>{{ p.faction?.name || '—' }}</td>
+              <td>{{ p['team']?.name || '—' }}</td>
+              <td>{{ p.checkedIn ? '✓' : '' }}</td>
+              <td>{{ p.dropped ? '✓' : '' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+    @case ('placings') {
+      <table class="placings">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="num">#</th>
+            <th>Player</th>
+            <th>Faction</th>
+            <th>Team</th>
+            <th class="num">Record</th>
+            <th class="num">Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of placings(); track p.id) {
+            <tr class="clickable" (click)="toggleExpand(p.id)">
+              <td class="toggle">{{ isExpanded(p.id) ? '▾' : '▸' }}</td>
+              <td class="num">{{ p.placing }}</td>
+              <td>{{ (p.user?.firstName || '') + ' ' + (p.user?.lastName || '') }}</td>
+              <td>{{ p.faction?.name || '—' }}</td>
+              <td>{{ p['team']?.name || '—' }}</td>
+              <td class="num">{{ placingRecord(p) || '—' }}</td>
+              <td class="num">{{ p.points | number: '1.2-2' }}</td>
+            </tr>
+            @if (isExpanded(p.id)) {
+              <tr class="detail-row">
+                <td></td>
+                <td colspan="6">
+                  @if (placingOpponents(p).length) {
+                    <table class="opponents">
+                      <thead>
+                        <tr>
+                          <th class="num">Rd</th>
+                          <th>Result</th>
+                          <th>Opponent</th>
+                          <th>Faction</th>
+                          <th class="num">Their record</th>
+                          <th class="num">Score</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (o of placingOpponents(p); track o.round) {
+                          <tr>
+                            <td class="num">{{ o.round }}</td>
+                            <td [class.win]="o.result === 'W'" [class.loss]="o.result === 'L'" [class.tie]="o.result === 'T'">{{ o.result || '—' }}</td>
+                            <td>{{ o.name }}</td>
+                            <td>{{ o.faction || '—' }}</td>
+                            <td class="num">{{ o.oppRecord || '—' }}</td>
+                            <td class="num">{{ o.score }}{{ o.oppScore ? ' – ' + o.oppScore : '' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  } @else {
+                    <p class="muted">No pairing data for this player.</p>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
+    @case ('pairings') {
+      <div class="round-picker">
+        <span class="muted">Round:</span>
+        @for (r of rounds(); track r) {
+          <button [class.active]="round() === r" (click)="round.set(r)">{{ r }}</button>
+        }
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="num">Table</th>
+            <th>Player 1</th><th>Faction</th><th class="num">Pts</th><th></th>
+            <th class="num">Pts</th><th>Faction</th><th>Player 2</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of pairingsForRound(); track p.pairingId) {
+            <tr>
+              <td class="num">{{ p.table }}</td>
+              <td>{{ sideNameDirect(p.player1) }}</td>
+              <td>{{ sideFactionDirect(p.player1) }}</td>
+              <td class="num">{{ sideScore(p, 1) }}</td>
+              <td class="muted">{{ sideResult(p, 1) }} — {{ sideResult(p, 2) }}</td>
+              <td class="num">{{ sideScore(p, 2) }}</td>
+              <td>{{ sideFactionDirect(p.player2) }}</td>
+              <td>{{ sideNameDirect(p.player2) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+}

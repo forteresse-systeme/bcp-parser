@@ -1,0 +1,39 @@
+# Node
+node_modules/
+npm-debug.log
+.angular/
+
+# Angular build output
+frontend/dist/
+
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+.vs/
+
+# IDE
+.idea/
+
+# Python helper script artifacts
+__pycache__/
+*.pyc
+bcp_main.js
+bcp_page.html
+events.json
+events.csv
+sample.json
+sample.csv
+bcp_events_sample.json
+factions.json
+resp.json
+sf.json
+ev.json
+p.json
+pp.json
+backend.log
+
+# OS
+Thumbs.db
+.DS_Store

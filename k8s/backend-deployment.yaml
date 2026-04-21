@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bcp-api
+  namespace: bcp-parser
+  labels:
+    app: bcp-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bcp-api
+  template:
+    metadata:
+      labels:
+        app: bcp-api
+    spec:
+      containers:
+        - name: bcp-api
+          image: ghcr.io/REPLACE_OWNER/bcp-parser-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            failureThreshold: 3
+      imagePullSecrets:
+        - name: ghcr-pull

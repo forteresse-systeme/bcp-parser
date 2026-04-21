@@ -1,0 +1,29 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #2b2b2b;
+  background: #111;
+  color: #f0f0f0;
+}
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #fff;
+  text-decoration: none;
+}
+.topbar nav a {
+  color: #bbb;
+  text-decoration: none;
+  margin-right: 0.75rem;
+}
+.topbar nav a.active,
+.topbar nav a:hover {
+  color: #fff;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}

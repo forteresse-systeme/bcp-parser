@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bcp-frontend
+  namespace: bcp-parser
+spec:
+  type: ClusterIP
+  selector:
+    app: bcp-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

@@ -1,0 +1,96 @@
+<section class="filters">
+  <form (ngSubmit)="submit()">
+    <label>
+      <span>Start</span>
+      <input type="date" [value]="startDate()" (change)="startDate.set($any($event.target).value)" />
+    </label>
+    <label>
+      <span>End</span>
+      <input type="date" [value]="endDate()" (change)="endDate.set($any($event.target).value)" />
+    </label>
+    <label>
+      <span>Game</span>
+      <select [value]="gameType()" (change)="onGameTypeChange(+$any($event.target).value)">
+        @for (g of gameTypes; track g.value) {
+          <option [value]="g.value" [selected]="g.value === gameType()">{{ g.label }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Faction</span>
+      <select [value]="factionId()" (change)="factionId.set($any($event.target).value)">
+        <option value="" [selected]="factionId() === ''">Any</option>
+        @for (f of factions(); track f.id) {
+          <option [value]="f.id" [selected]="f.id === factionId()">{{ f.name }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Status</span>
+      <select [value]="status()" (change)="status.set($any($event.target).value)">
+        <option value="upcoming" [selected]="status() === 'upcoming'">Upcoming</option>
+        <option value="started" [selected]="status() === 'started'">Started</option>
+        <option value="ended" [selected]="status() === 'ended'">Ended</option>
+      </select>
+    </label>
+    <label>
+      <span>Sort</span>
+      <select (change)="sortAsc.set($any($event.target).value === 'asc')">
+        <option value="asc" [selected]="sortAsc()">Date ↑</option>
+        <option value="desc" [selected]="!sortAsc()">Date ↓</option>
+      </select>
+    </label>
+    <button type="submit" [disabled]="loading()">{{ loading() ? 'Loading…' : 'Search' }}</button>
+  </form>
+</section>
+
+@if (error()) { <p class="error">{{ error() }}</p> }
+
+<section class="summary">
+  <span>
+    {{ selectedGameLabel() }} · {{ status() }} · {{ startDate() | date: 'MMM d, y' }} → {{ endDate() | date: 'MMM d, y' }}@if (factionId()) { · filtered by faction }
+  </span>
+  <span>
+    {{ events().length }} events loaded@if (factionId() && scanned() > 0) { of {{ scanned() }} scanned }
+  </span>
+</section>
+
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Name</th>
+      <th>Location</th>
+      <th class="num">Players</th>
+      <th class="num">Rounds</th>
+      <th>Organizer</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (e of events(); track e.id) {
+      <tr>
+        <td>{{ e.eventDate | date: 'yyyy-MM-dd' }}</td>
+        <td><a [routerLink]="['/events', e.id]">{{ e.name }}</a></td>
+        <td>
+          <div>{{ e.locationName || '—' }}</div>
+          <div class="muted">{{ e.city }}@if (e.state) {, {{ e.state }}}@if (e.country) {, {{ e.country }}}</div>
+        </td>
+        <td class="num">{{ e.totalPlayers ?? '—' }}</td>
+        <td class="num">{{ e.numberOfRounds ?? '—' }}</td>
+        <td>{{ e.ownerFirstName }} {{ e.ownerLastName }}</td>
+      </tr>
+    } @empty {
+      @if (!loading()) { <tr><td colspan="6" class="muted">No events.</td></tr> }
+    }
+  </tbody>
+</table>
+
+<div class="pager">
+  <button (click)="loadMore()" [disabled]="!hasMore() || loading() || filtersChanged()">
+    {{ loading()
+      ? 'Loading…'
+      : filtersChanged()
+        ? 'Click Search to apply new filters'
+        : (hasMore() ? 'Load more' : 'End of results') }}
+  </button>
+</div>
