@@ -39,6 +39,40 @@ export class EventDetailComponent {
 
   expanded = signal<Set<string>>(new Set());
 
+  listUrlByUserId = computed(() => {
+    const m = new Map<string, string>();
+    for (const p of this.players()) {
+      if (p.user?.id && p['listUrl']) m.set(p.user.id, this.fullListUrl(p['listUrl']));
+    }
+    return m;
+  });
+
+  listUrlByPlayerId = computed(() => {
+    const m = new Map<string, string>();
+    for (const p of this.players()) {
+      if (p.id && p['listUrl']) m.set(p.id, this.fullListUrl(p['listUrl']));
+    }
+    return m;
+  });
+
+  private fullListUrl(rel: string): string {
+    if (rel.startsWith('http')) return rel;
+    return `https://www.bestcoastpairings.com${rel.startsWith('/') ? '' : '/'}${rel}`;
+  }
+
+  listForPlayer(p: Player | null | undefined): string | null {
+    const url = p?.['listUrl'];
+    return url ? this.fullListUrl(url) : null;
+  }
+
+  listForUserId(uid: string | undefined | null): string | null {
+    return uid ? this.listUrlByUserId().get(uid) ?? null : null;
+  }
+
+  listForPlayerId(pid: string | undefined | null): string | null {
+    return pid ? this.listUrlByPlayerId().get(pid) ?? null : null;
+  }
+
   opponentIndex = computed(() => {
     const userToPlayer = new Map<string, string>();
     for (const p of this.players()) {
