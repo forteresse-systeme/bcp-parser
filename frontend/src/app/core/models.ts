@@ -80,7 +80,7 @@ export interface EventSearchParams {
   gameType?: number;
   eventStatus?: EventStatus;
   sortKey?: string;
-  sortAsc?: boolean;
+  sortAscending?: boolean;
   limit?: number;
   nextKey?: string;
   name?: string;

@@ -33,9 +33,11 @@ export class EventListComponent {
   endDate = signal<string>('2026-06-21');
   gameType = signal<number>(1);
   status = signal<EventStatus>('ended');
-  sortAsc = signal<boolean>(true);
+  sortAscending = signal<boolean>(true);
   limit = signal<number>(25);
   factionId = signal<string>('');
+  minRounds = signal<number | null>(null);
+  maxRounds = signal<number | null>(null);
 
   factions = signal<Array<{ id: string; name: string }>>([]);
   events = signal<EventSummary[]>([]);
@@ -45,19 +47,23 @@ export class EventListComponent {
   page = signal<number>(0);
   scanned = signal<number>(0);
   searchedFilters = signal<Omit<EventSearchParams, 'nextKey'> | null>(null);
+  searchedRounds = signal<{ min: number | null; max: number | null }>({ min: null, max: null });
 
   hasMore = computed(() => !!this.nextKey());
   filtersChanged = computed(() => {
     const snap = this.searchedFilters();
     if (!snap) return false;
+    const rounds = this.searchedRounds();
     return (
       snap.startDate !== this.startDate() ||
       snap.endDate !== this.endDate() ||
       snap.gameType !== this.gameType() ||
       snap.eventStatus !== this.status() ||
-      snap.sortAsc !== this.sortAsc() ||
+      snap.sortAscending !== this.sortAscending() ||
       snap.limit !== this.limit() ||
-      (snap.factionId ?? '') !== (this.factionId() || '')
+      (snap.factionId ?? '') !== (this.factionId() || '') ||
+      rounds.min !== this.minRounds() ||
+      rounds.max !== this.maxRounds()
     );
   });
 
@@ -70,9 +76,11 @@ export class EventListComponent {
         this.endDate(),
         this.gameType(),
         this.status(),
-        this.sortAsc(),
+        this.sortAscending(),
         this.limit(),
         this.factionId(),
+        this.minRounds(),
+        this.maxRounds(),
       ].join('|');
       void key;
       if (debounce) clearTimeout(debounce);
@@ -110,10 +118,11 @@ export class EventListComponent {
         gameType: this.gameType(),
         eventStatus: this.status(),
         sortKey: 'eventDate',
-        sortAsc: this.sortAsc(),
+        sortAscending: this.sortAscending(),
         limit: this.limit(),
         factionId: this.factionId() || undefined,
       });
+      this.searchedRounds.set({ min: this.minRounds(), max: this.maxRounds() });
     }
     const snap = this.searchedFilters();
     if (!snap) return;
@@ -126,10 +135,13 @@ export class EventListComponent {
       })
       .subscribe({
         next: (r: any) => {
-          this.events.update((prev) => [...prev, ...(r.data ?? [])]);
+          const incoming = (r.data ?? []) as EventSummary[];
+          const filtered = this.applyRoundsFilter(incoming);
+          this.events.update((prev) => [...prev, ...filtered]);
           this.nextKey.set(r.nextKey ?? null);
           this.page.update((p) => p + 1);
           if (typeof r.scanned === 'number') this.scanned.update((s) => s + r.scanned);
+          else this.scanned.update((s) => s + incoming.length);
           this.loading.set(false);
         },
         error: (err) => {
@@ -139,11 +151,28 @@ export class EventListComponent {
       });
   }
 
+  private applyRoundsFilter(events: EventSummary[]): EventSummary[] {
+    const { min, max } = this.searchedRounds();
+    if (min == null && max == null) return events;
+    return events.filter((e) => {
+      const n = e.numberOfRounds;
+      if (n == null) return false;
+      if (min != null && n < min) return false;
+      if (max != null && n > max) return false;
+      return true;
+    });
+  }
+
   submit() {
     this.load(true);
   }
 
   loadMore() {
     if (this.hasMore() && !this.loading() && !this.filtersChanged()) this.load(false);
+  }
+
+  parseRound(v: string): number | null {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
   }
 }

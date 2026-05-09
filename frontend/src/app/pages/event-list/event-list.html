@@ -35,10 +35,22 @@
     </label>
     <label>
       <span>Sort</span>
-      <select (change)="sortAsc.set($any($event.target).value === 'asc')">
-        <option value="asc" [selected]="sortAsc()">Date ↑</option>
-        <option value="desc" [selected]="!sortAsc()">Date ↓</option>
+      <select (change)="sortAscending.set($any($event.target).value === 'asc')">
+        <option value="asc" [selected]="sortAscending()">Date ↑</option>
+        <option value="desc" [selected]="!sortAscending()">Date ↓</option>
       </select>
+    </label>
+    <label>
+      <span>Min rounds</span>
+      <input type="number" min="1" max="20" placeholder="any"
+             [value]="minRounds() ?? ''"
+             (change)="minRounds.set(parseRound($any($event.target).value))" />
+    </label>
+    <label>
+      <span>Max rounds</span>
+      <input type="number" min="1" max="20" placeholder="any"
+             [value]="maxRounds() ?? ''"
+             (change)="maxRounds.set(parseRound($any($event.target).value))" />
     </label>
     <button type="submit" [disabled]="loading()">{{ loading() ? 'Loading…' : 'Search' }}</button>
   </form>
@@ -48,10 +60,10 @@
 
 <section class="summary">
   <span>
-    {{ selectedGameLabel() }} · {{ status() }} · {{ startDate() | date: 'MMM d, y' }} → {{ endDate() | date: 'MMM d, y' }}@if (factionId()) { · filtered by faction }
+    {{ selectedGameLabel() }} · {{ status() }} · {{ startDate() | date: 'MMM d, y' }} → {{ endDate() | date: 'MMM d, y' }}@if (factionId()) { · filtered by faction }@if (minRounds() != null || maxRounds() != null) { · rounds {{ minRounds() ?? '?' }}–{{ maxRounds() ?? '?' }} }
   </span>
   <span>
-    {{ events().length }} events loaded@if (factionId() && scanned() > 0) { of {{ scanned() }} scanned }
+    {{ events().length }} events loaded@if (scanned() > 0 && events().length !== scanned()) { of {{ scanned() }} scanned }
   </span>
 </section>
 
